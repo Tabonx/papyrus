@@ -8,7 +8,7 @@
 @preconcurrency import CoreBluetooth
 import SwiftUI
 
-// MARK: - ESC/POS Commands 
+// MARK: - ESC/POS Commands for Rongta RPP200
 enum ESCPOSCommands {
     static let initialize: [UInt8] = [0x1B, 0x40] // ESC @
     static let cutPaper: [UInt8] = [0x1D, 0x56, 0x42, 0x00] // GS V B 0
@@ -24,6 +24,8 @@ enum ESCPOSCommands {
     static let doubleWidth: [UInt8] = [0x1B, 0x21, 0x20] // ESC ! 32
     static let doubleHeight: [UInt8] = [0x1B, 0x21, 0x10] // ESC ! 16
     static let normalSize: [UInt8] = [0x1B, 0x21, 0x00] // ESC ! 0
+    static let underlineOn: [UInt8] = [0x1B, 0x2D, 0x01] // ESC - 1
+    static let underlineOff: [UInt8] = [0x1B, 0x2D, 0x00] // ESC - 0
 
     static func setLineSpacing(_ spacing: UInt8) -> [UInt8] {
         return [0x1B, 0x33, spacing] // ESC 3 n
@@ -34,6 +36,170 @@ enum ESCPOSCommands {
     }
 }
 
+// MARK: - Receipt Model
+enum ReceiptElementType {
+    case text
+    case separator
+    case spacer
+}
+
+enum ReceiptTextAlignment {
+    case left
+    case center
+    case right
+
+    var escCommand: [UInt8] {
+        switch self {
+        case .left: return ESCPOSCommands.alignLeft
+        case .center: return ESCPOSCommands.alignCenter
+        case .right: return ESCPOSCommands.alignRight
+        }
+    }
+
+    var ui: TextAlignment {
+        switch self {
+        case .left:
+            return TextAlignment.leading
+
+        case .center:
+            return TextAlignment.center
+
+        case .right:
+            return TextAlignment.trailing
+        }
+    }
+}
+
+enum TextSize {
+    case normal
+    case doubleWidth
+    case doubleHeight
+    case both
+
+    var escCommand: [UInt8] {
+        switch self {
+        case .normal: return ESCPOSCommands.normalSize
+        case .doubleWidth: return ESCPOSCommands.doubleWidth
+        case .doubleHeight: return ESCPOSCommands.doubleHeight
+        case .both: return [0x1B, 0x21, 0x30] // ESC ! 48 (both)
+        }
+    }
+}
+
+struct ReceiptElement: Identifiable, Codable {
+    let id: UUID
+    var type: ReceiptElementType
+    var text: String
+    var isBold: Bool
+    var isUnderlined: Bool
+    var alignment: ReceiptTextAlignment
+    var size: TextSize
+    var lineCount: Int
+
+    init(type: ReceiptElementType = .text,
+         text: String = "",
+         isBold: Bool = false,
+         isUnderlined: Bool = false,
+         alignment: ReceiptTextAlignment = .left,
+         size: TextSize = .normal,
+         lineCount: Int = 1) {
+        id = UUID()
+        self.type = type
+        self.text = text
+        self.isBold = isBold
+        self.isUnderlined = isUnderlined
+        self.alignment = alignment
+        self.size = size
+        self.lineCount = lineCount
+    }
+}
+
+// Make enums Codable
+extension ReceiptElementType: Codable {}
+extension ReceiptTextAlignment: Codable {}
+extension TextSize: Codable {}
+
+@MainActor
+@Observable
+class ReceiptTemplate {
+    var elements: [ReceiptElement] = []
+    var name: String = "New Receipt"
+
+    func addElement(_ element: ReceiptElement) {
+        elements.append(element)
+    }
+
+    func removeElement(at index: Int) {
+        if index < elements.count {
+            elements.remove(at: index)
+        }
+    }
+
+    func moveElement(from: Int, to: Int) {
+        if from < elements.count, to <= elements.count {
+            let element = elements.remove(at: from)
+            elements.insert(element, at: to > from ? to - 1 : to)
+        }
+    }
+
+    func generatePrintData() -> Data {
+        var printData = Data()
+
+        // Initialize printer
+        printData.append(Data(ESCPOSCommands.initialize))
+        printData.append(Data([0x1B, 0x74, 0x10])) // UTF-8 encoding
+
+        for element in elements {
+            switch element.type {
+            case .text:
+                // Set alignment
+                printData.append(Data(element.alignment.escCommand))
+
+                // Set text size
+                printData.append(Data(element.size.escCommand))
+
+                // Set bold
+                if element.isBold {
+                    printData.append(Data(ESCPOSCommands.boldOn))
+                }
+
+                // Set underline
+                if element.isUnderlined {
+                    printData.append(Data(ESCPOSCommands.underlineOn))
+                }
+
+                // Add text
+                let textToAdd = element.text.isEmpty ? " " : element.text
+                printData.append((textToAdd + "\n").data(using: .utf8) ?? Data())
+
+                // Reset formatting
+                if element.isBold {
+                    printData.append(Data(ESCPOSCommands.boldOff))
+                }
+                if element.isUnderlined {
+                    printData.append(Data(ESCPOSCommands.underlineOff))
+                }
+                printData.append(Data(ESCPOSCommands.normalSize))
+
+            case .separator:
+                printData.append(Data(ESCPOSCommands.alignLeft))
+                let separatorText = String(repeating: "-", count: 32)
+                printData.append((separatorText + "\n").data(using: .utf8) ?? Data())
+
+            case .spacer:
+                printData.append(Data(ESCPOSCommands.feedLines(UInt8(element.lineCount))))
+            }
+        }
+
+        // Feed paper and cut
+        printData.append(Data(ESCPOSCommands.feedLines(3)))
+        printData.append(Data(ESCPOSCommands.cutPaper))
+
+        return printData
+    }
+}
+
+// MARK: - Printer State Management
 @MainActor
 @Observable
 class PrinterState {
@@ -114,18 +280,6 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
     private var scanContinuation: CheckedContinuation<[CBPeripheral], Never>?
     private var connectionContinuation: CheckedContinuation<Void, Error>?
     private var printContinuation: CheckedContinuation<Void, Error>?
-
-    // Common service UUIDs for thermal printers
-    private let printerServiceUUIDs: [CBUUID] = [
-        CBUUID(string: "49535343-FE7D-4AE5-8FA9-9FAFD205E455"),
-        CBUUID(string: "E7810A71-73AE-499D-8C15-FAA9AEF0C3F2"),
-        CBUUID(string: "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"),
-    ]
-
-    private let writeCharacteristicUUIDs: [CBUUID] = [
-        CBUUID(string: "49535343-8841-43F4-A8D4-ECBE34729BB3"),
-        CBUUID(string: "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"),
-    ]
 
     override init() {
         super.init()
@@ -237,7 +391,7 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         state.updateStatus("Disconnected")
     }
 
-    func printTestReceipt() async throws {
+    func printReceipt(_ template: ReceiptTemplate) async throws {
         guard state.isConnected,
               let peripheral = printerPeripheral,
               let characteristic = writeCharacteristic else {
@@ -247,7 +401,7 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
         state.setPrinting(true)
         state.updateStatus("Preparing print job...")
 
-        let printData = await createTestReceiptData()
+        let printData = template.generatePrintData()
 
         defer {
             state.setPrinting(false)
@@ -267,66 +421,6 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
                     self.printContinuation?.resume(throwing: PrinterError.printTimeout)
                     self.printContinuation = nil
                 }
-            }
-        }
-    }
-
-    private func createTestReceiptData() async -> Data {
-        return await withCheckedContinuation { continuation in
-            Task.detached {
-                var printData = Data()
-
-                // Initialize printer
-                printData.append(Data(ESCPOSCommands.initialize))
-
-                // Set character set to UTF-8
-                printData.append(Data([0x1B, 0x74, 0x10])) // ESC t 16
-
-              
-                printData.append(Data(ESCPOSCommands.alignCenter))
-                printData.append(Data(ESCPOSCommands.doubleWidth))
-                printData.append(Data(ESCPOSCommands.boldOn))
-                printData.append("RECEIPT\n".data(using: .ascii) ?? Data())
-                printData.append(Data(ESCPOSCommands.normalSize))
-                printData.append(Data(ESCPOSCommands.boldOff))
-
-                // Store info
-                printData.append("My Store Name\n".data(using: .ascii) ?? Data())
-                printData.append("123 Main Street\n".data(using: .ascii) ?? Data())
-                printData.append("City, State 12345\n".data(using: .ascii) ?? Data())
-                printData.append("Tel: (555) 123-4567\n".data(using: .ascii) ?? Data())
-
-                // Separator line
-                printData.append(Data(ESCPOSCommands.alignLeft))
-                printData.append("--------------------------------\n".data(using: .ascii) ?? Data())
-
-                // Items
-                printData.append("Item A               $5.00\n".data(using: .ascii) ?? Data())
-                printData.append("Item B               $3.50\n".data(using: .ascii) ?? Data())
-                printData.append("Item C               $2.25\n".data(using: .ascii) ?? Data())
-
-                // Separator
-                printData.append("--------------------------------\n".data(using: .ascii) ?? Data())
-
-                // Total
-                printData.append(Data(ESCPOSCommands.boldOn))
-                printData.append("TOTAL:              $10.75\n".data(using: .ascii) ?? Data())
-                printData.append(Data(ESCPOSCommands.boldOff))
-
-                // Footer
-                printData.append(Data(ESCPOSCommands.alignCenter))
-                printData.append("\nThank you for your business!\n".data(using: .ascii) ?? Data())
-
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .short
-                dateFormatter.timeStyle = .short
-                printData.append("\(dateFormatter.string(from: Date()))\n".data(using: .ascii) ?? Data())
-
-                // Feed paper and cut
-                printData.append(Data(ESCPOSCommands.feedLines(3)))
-                printData.append(Data(ESCPOSCommands.cutPaper))
-
-                continuation.resume(returning: printData)
             }
         }
     }

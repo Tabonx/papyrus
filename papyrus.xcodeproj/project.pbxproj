@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3C58B9422E282032007DC1C4 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = 3C58B9412E282032007DC1C4 /* Dependencies */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		3C00D5B62E049B1600163986 /* papyrus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = papyrus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C58B9422E282032007DC1C4 /* Dependencies in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = papyrus;
 			packageProductDependencies = (
+				3C58B9412E282032007DC1C4 /* Dependencies */,
 			);
 			productName = papyrus;
 			productReference = 3C00D5B62E049B1600163986 /* papyrus.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 3C00D5AD2E049B1600163986;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3C58B9402E282032007DC1C4 /* XCRemoteSwiftPackageReference "swift-dependencies" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3C00D5B72E049B1600163986 /* Products */;
 			projectDirPath = "";
@@ -328,6 +337,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3C58B9402E282032007DC1C4 /* XCRemoteSwiftPackageReference "swift-dependencies" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-dependencies";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3C58B9412E282032007DC1C4 /* Dependencies */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3C58B9402E282032007DC1C4 /* XCRemoteSwiftPackageReference "swift-dependencies" */;
+			productName = Dependencies;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3C00D5AE2E049B1600163986 /* Project object */;
 }

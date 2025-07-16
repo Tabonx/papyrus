@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Business" representedClassName="Business" syncable="YES" codeGenerationType="class">
+        <attribute name="adress" optional="YES" attributeType="String"/>
+        <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="defaultCurrency" optional="YES" attributeType="String"/>
+        <attribute name="defaultTaxRate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="email" optional="YES" attributeType="String"/>
+        <attribute name="id_" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="website" optional="YES" attributeType="String"/>
+        <relationship name="items_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Item" inverseName="business" inverseEntity="Item"/>
+        <relationship name="receipts_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Receipt" inverseName="business" inverseEntity="Receipt"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id_"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="Issuer" representedClassName="Issuer" syncable="YES" codeGenerationType="class">
+        <attribute name="id_" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name_" optional="YES" attributeType="String"/>
+        <relationship name="receipts_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Receipt" inverseName="issuer" inverseEntity="Receipt"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id_"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id_" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name_" optional="YES" attributeType="String"/>
+        <attribute name="price_" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="taxRate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="business" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Business" inverseName="items_" inverseEntity="Business"/>
+        <relationship name="receiptItems_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ReceiptItem" inverseName="item" inverseEntity="ReceiptItem"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id_"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="Receipt" representedClassName="Receipt" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="footerText" optional="YES" attributeType="String"/>
+        <attribute name="id_" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="issuedBy" optional="YES" attributeType="String"/>
+        <attribute name="issuedDate_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="legalPerformanceDate_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="paymentMethod_" optional="YES" attributeType="String"/>
+        <attribute name="receiptNumber_" optional="YES" attributeType="String"/>
+        <relationship name="business" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Business" inverseName="receipts_" inverseEntity="Business"/>
+        <relationship name="issuer" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Issuer" inverseName="receipts_" inverseEntity="Issuer"/>
+        <relationship name="items_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ReceiptItem" inverseName="receipt" inverseEntity="ReceiptItem"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id_"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="ReceiptItem" representedClassName="ReceiptItem" syncable="YES" codeGenerationType="class">
+        <attribute name="id_" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="itemName_" optional="YES" attributeType="String"/>
+        <attribute name="order_" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="quantity_" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="taxRate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="unitPrice_" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <relationship name="item" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Item" inverseName="receiptItems_" inverseEntity="Item"/>
+        <relationship name="receipt" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Receipt" inverseName="items_" inverseEntity="Receipt"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id_"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+</model>
