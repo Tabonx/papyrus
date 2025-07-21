@@ -58,3 +58,48 @@ extension Item {
         set { receiptItems_ = newValue as NSSet }
     }
 }
+
+extension Item {
+    func toDTO() -> ItemDTO {
+        ItemDTO(from: self)
+    }
+}
+
+extension Item {
+    static func fetchAllItems() -> NSFetchRequest<Item> {
+        let request = Item.fetchRequest()
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "name_", ascending: true),
+        ]
+        return request
+    }
+
+    static func fetchItems(searchText: String? = nil) -> NSFetchRequest<Item> {
+        let request = fetchAllItems()
+
+        if let searchText = searchText, !searchText.isEmpty {
+            request.predicate = NSPredicate(
+                format: "name_ CONTAINS[cd] %@",
+                searchText
+            )
+        }
+
+        return request
+    }
+
+    static func fetchItem(withId itemId: UUID) -> NSFetchRequest<Item> {
+        let request = Item.fetchRequest()
+        request.predicate = NSPredicate(format: "id_ == %@", itemId as CVarArg)
+        request.fetchLimit = 1
+        return request
+    }
+
+    static func fetchRecentlyModifiedItems(limit: Int = 5) -> NSFetchRequest<Item> {
+        let request = Item.fetchRequest()
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "updatedAt_", ascending: false),
+        ]
+        request.fetchLimit = limit
+        return request
+    }
+}

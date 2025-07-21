@@ -20,7 +20,7 @@ struct CartItem: Identifiable, Equatable {
     }
 
     var taxAmount: Decimal {
-        subtotal * Decimal(taxRate / 100.0)
+        subtotal * Decimal(taxRate)
     }
 
     var total: Decimal {

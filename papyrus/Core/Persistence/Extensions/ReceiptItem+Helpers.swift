@@ -53,3 +53,49 @@ extension ReceiptItem {
         }
     }
 }
+
+extension ReceiptItem {
+    func toDTO() -> ReceiptItemDTO {
+        ReceiptItemDTO(from: self)
+    }
+}
+
+extension ReceiptItem {
+    static func fetchAllReceiptItems() -> NSFetchRequest<ReceiptItem> {
+        let request = ReceiptItem.fetchRequest()
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \ReceiptItem.itemName_, ascending: true),
+        ]
+        return request
+    }
+
+    static func fetchReceiptItems(from startDate: Date, to endDate: Date) -> NSFetchRequest<ReceiptItem> {
+        let request = ReceiptItem.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "receipt.createdAt_ >= %@ AND receipt.createdAt_ <= %@",
+            startDate as NSDate,
+            endDate as NSDate
+        )
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \ReceiptItem.itemName_, ascending: true),
+        ]
+        return request
+    }
+
+    static func fetchReceiptItem(withId receiptItemId: UUID) -> NSFetchRequest<ReceiptItem> {
+        let request = ReceiptItem.fetchRequest()
+        request.predicate = NSPredicate(format: "id_ == %@", receiptItemId as CVarArg)
+        request.fetchLimit = 1
+        return request
+    }
+
+    static func fetchReceiptItems(for receiptId: UUID) -> NSFetchRequest<ReceiptItem> {
+        let request = ReceiptItem.fetchRequest()
+        request.predicate = NSPredicate(format: "receipt.id_ == %@", receiptId as CVarArg)
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \ReceiptItem.order_, ascending: true),
+            NSSortDescriptor(keyPath: \ReceiptItem.itemName_, ascending: true),
+        ]
+        return request
+    }
+}

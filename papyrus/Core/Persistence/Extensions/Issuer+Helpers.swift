@@ -30,3 +30,26 @@ extension Issuer {
         set { receipts_ = newValue as NSSet }
     }
 }
+
+extension Issuer {
+    func toDTO() -> IssuerDTO {
+        IssuerDTO(from: self)
+    }
+}
+
+extension Issuer {
+    static func fetchAllIssuers() -> NSFetchRequest<Issuer> {
+        let request = Issuer.fetchRequest()
+        request.sortDescriptors = [
+            NSSortDescriptor(keyPath: \Issuer.name_, ascending: true),
+        ]
+        return request
+    }
+
+    static func fetchIssuer(withId issuerId: UUID) -> NSFetchRequest<Issuer> {
+        let request = Issuer.fetchRequest()
+        request.predicate = NSPredicate(format: "id_ == %@", issuerId as CVarArg)
+        request.fetchLimit = 1
+        return request
+    }
+}

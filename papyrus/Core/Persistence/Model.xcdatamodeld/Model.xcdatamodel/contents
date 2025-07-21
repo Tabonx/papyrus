@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
     <entity name="Business" representedClassName="Business" syncable="YES" codeGenerationType="class">
-        <attribute name="adress" optional="YES" attributeType="String"/>
+        <attribute name="address" optional="YES" attributeType="String"/>
         <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="defaultCurrency" optional="YES" attributeType="String"/>
         <attribute name="defaultTaxRate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
@@ -55,6 +55,12 @@
         <relationship name="business" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Business" inverseName="receipts_" inverseEntity="Business"/>
         <relationship name="issuer" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Issuer" inverseName="receipts_" inverseEntity="Issuer"/>
         <relationship name="items_" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ReceiptItem" inverseName="receipt" inverseEntity="ReceiptItem"/>
+        <fetchIndex name="byReceiptNumberIndex">
+            <fetchIndexElement property="receiptNumber_" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIssuedDateIndex">
+            <fetchIndexElement property="issuedDate_" type="Binary" order="ascending"/>
+        </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id_"/>

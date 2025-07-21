@@ -46,8 +46,6 @@ class ShoppingCart {
         total.formatted(.currency(code: "CZK").presentation(.narrow).rounded())
     }
 
-    // MARK: - Cart Operations
-
     func addItem(itemId: UUID, name: String, unitPrice: Decimal, taxRate: Double, quantity: Int = 1) {
         if let existingIndex = items.firstIndex(where: { $0.itemId == itemId }) {
             // Update quantity of existing item
