@@ -12,6 +12,15 @@ actor IssuerRepository: IssuerRepositoryProtocol {
     @Dependency(\.date) var date
     @Dependency(\.persistenceController) var persistenceController
 
+    func fetchActiveIssuer() async throws -> IssuerDTO? {
+        let context = persistenceController.backgroundContext
+
+        return try await context.perform {
+            let request = Issuer.fetchActiveIssuer()
+            return try context.fetch(request).first?.toDTO()
+        }
+    }
+
     func fetchAllIssuers() async throws -> [IssuerDTO] {
         let context = persistenceController.backgroundContext
 
@@ -43,10 +52,10 @@ actor IssuerRepository: IssuerRepositoryProtocol {
         }
     }
 
-    func updateIssuer(_ issuerId: UUID, name: String) async throws {
+    func updateIssuer(_ issuerId: UUID, name: String) async throws -> IssuerDTO {
         let context = persistenceController.backgroundContext
 
-        try await context.perform {
+        return try await context.perform {
             let request = Issuer.fetchIssuer(withId: issuerId)
             guard let issuer = try context.fetch(request).first else {
                 throw RepositoryError.issuerNotFound
@@ -54,6 +63,8 @@ actor IssuerRepository: IssuerRepositoryProtocol {
 
             issuer.name = name
             try context.save()
+
+            return issuer.toDTO()
         }
     }
 
@@ -68,6 +79,30 @@ actor IssuerRepository: IssuerRepositoryProtocol {
 
             context.delete(issuer)
             try context.save()
+        }
+    }
+
+    func makeIssuerActive(_ issuerID: UUID) async throws -> IssuerDTO? {
+        let context = persistenceController.backgroundContext
+
+        return try await context.perform {
+            let request = Issuer.fetchActiveIssuer()
+            let issuers = try context.fetch(request)
+
+            var activeIssuer: Issuer?
+
+            for issuer in issuers {
+                if issuer.id == issuerID {
+                    issuer.isActive = true
+                    activeIssuer = issuer
+                } else {
+                    issuer.isActive = false
+                }
+            }
+
+            try context.save()
+
+            return activeIssuer?.toDTO()
         }
     }
 }

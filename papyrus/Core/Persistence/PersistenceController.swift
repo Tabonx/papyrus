@@ -8,7 +8,7 @@
 import CoreData
 import Dependencies
 
-class PersistenceController: ObservableObject {
+class PersistenceController: ObservableObject, @unchecked Sendable{
     static let shared = PersistenceController()
 
     private init() {}
@@ -50,6 +50,8 @@ class PersistenceController: ObservableObject {
         return context
     }
 }
+
+extension NSManagedObjectContext: @unchecked @retroactive Sendable {}
 
 extension DependencyValues {
     var persistenceController: PersistenceController {

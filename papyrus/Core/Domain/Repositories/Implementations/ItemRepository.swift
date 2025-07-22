@@ -9,7 +9,6 @@ import CoreData
 import Dependencies
 
 actor ItemRepository: ItemRepositoryProtocol {
-    @Dependency(\.date) var date
     @Dependency(\.persistenceController) var persistenceController
 
     func fetchAllItems() async throws -> [ItemDTO] {
@@ -50,6 +49,7 @@ actor ItemRepository: ItemRepositoryProtocol {
 
     func createItem(name: String, price: Decimal, taxRate: Double) async throws -> ItemDTO {
         let context = persistenceController.backgroundContext
+        @Dependency(\.date) var date
 
         return try await context.perform {
             let item = Item(context: context)
@@ -57,18 +57,19 @@ actor ItemRepository: ItemRepositoryProtocol {
             item.name = name
             item.price = price
             item.taxRate = taxRate
-            item.createdAt = self.date.now
-            item.updatedAt = self.date.now
+            item.createdAt = date.now
+            item.updatedAt = date.now
 
             try context.save()
             return item.toDTO()
         }
     }
 
-    func updateItem(_ itemID: UUID, name: String?, price: Decimal?, taxRate: Double?) async throws {
+    func updateItem(_ itemID: UUID, name: String?, price: Decimal?, taxRate: Double?) async throws -> ItemDTO {
         let context = persistenceController.backgroundContext
+        @Dependency(\.date) var date
 
-        try await context.perform {
+        return try await context.perform {
             let itemRequest = Item.fetchItem(withId: itemID)
 
             guard let contextItem = try context.fetch(itemRequest).first else { throw RepositoryError.itemNotFound }
@@ -84,9 +85,11 @@ actor ItemRepository: ItemRepositoryProtocol {
                 contextItem.taxRate = taxRate
             }
 
-            contextItem.updatedAt = self.date.now
+            contextItem.updatedAt = date.now
 
             try context.save()
+
+            return contextItem.toDTO()
         }
     }
 

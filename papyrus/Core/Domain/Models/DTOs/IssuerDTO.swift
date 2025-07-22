@@ -11,11 +11,13 @@ import Foundation
 struct IssuerDTO: Identifiable, Hashable {
     let id: UUID
     let name: String
+    let isActive: Bool
 }
 
 extension IssuerDTO {
     init(from issuer: Issuer) {
         id = issuer.id
         name = issuer.name
+        isActive = issuer.isActive
     }
 }

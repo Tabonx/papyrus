@@ -10,11 +10,11 @@ import Foundation
 
 struct ReceiptItemDTO: Identifiable, Hashable {
     let id: UUID
-    let itemName: String
-    let unitPrice: Decimal
-    let quantity: Int
-    let taxRate: Double
-    let order: Int
+    var itemName: String
+    var unitPrice: Decimal
+    var quantity: Int
+    var taxRate: Double
+    var order: Int
 
     // Original item ID if linked
     let itemId: UUID?

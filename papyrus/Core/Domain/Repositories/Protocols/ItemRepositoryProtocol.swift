@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol ItemRepositoryProtocol {
+protocol ItemRepositoryProtocol: Sendable {
     func fetchAllItems() async throws -> [ItemDTO]
 
     func fetchItems(searchText: String?) async throws -> [ItemDTO]
@@ -18,7 +18,7 @@ protocol ItemRepositoryProtocol {
 
     func createItem(name: String, price: Decimal, taxRate: Double) async throws -> ItemDTO
 
-    func updateItem(_ itemID: UUID, name: String?, price: Decimal?, taxRate: Double?) async throws
+    func updateItem(_ itemID: UUID, name: String?, price: Decimal?, taxRate: Double?) async throws -> ItemDTO
 
     func deleteItem(_ itemID: UUID) async throws
 

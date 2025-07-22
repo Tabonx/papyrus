@@ -8,7 +8,7 @@
 import CoreData
 import Foundation
 
-struct ItemDTO: Identifiable, Hashable {
+struct ItemDTO: Identifiable, Hashable, Sendable {
     let id: UUID
     let name: String
     let price: Decimal
@@ -39,16 +39,6 @@ struct ItemDTO: Identifiable, Hashable {
 
     var formattedPriceIncludingTax: String {
         priceIncludingTax.formatted(.currency(code: "CZK").presentation(.narrow))
-    }
-
-    func toCartItem(quantity: Int = 1) -> CartItem {
-        CartItem(
-            itemId: id,
-            name: name,
-            unitPrice: price,
-            taxRate: taxRate,
-            quantity: quantity
-        )
     }
 
     func calculateTotal(quantity: Int) -> Decimal {

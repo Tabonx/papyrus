@@ -16,6 +16,7 @@ struct BusinessDTO: Identifiable, Hashable {
     let website: String?
     let defaultTaxRate: Double
     let defaultCurrency: String
+    let isActive: Bool
     let createdAt: Date
     let updatedAt: Date
 
@@ -48,6 +49,7 @@ extension BusinessDTO {
         website = business.website
         defaultTaxRate = business.defaultTaxRate
         defaultCurrency = business.defaultCurrency ?? "CZK"
+        isActive = business.isActive
         createdAt = business.createdAt
         updatedAt = business.updatedAt
     }

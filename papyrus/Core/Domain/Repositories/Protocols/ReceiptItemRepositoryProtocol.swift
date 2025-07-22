@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol ReceiptItemRepositoryProtocol {
+protocol ReceiptItemRepositoryProtocol: Sendable{
     func fetchReceiptItems(for receiptId: UUID) async throws -> [ReceiptItemDTO]
 
     func fetchReceiptItem(withId receiptItemId: UUID) async throws -> ReceiptItemDTO?
@@ -36,7 +36,7 @@ protocol ReceiptItemRepositoryProtocol {
         order: Int?,
         linkedItemId: UUID?
     )
-        async throws
+        async throws  -> ReceiptItemDTO
 
     func deleteReceiptItem(_ receiptItemId: UUID) async throws
 }

@@ -7,8 +7,8 @@
 
 import Foundation
 
-protocol BusinessRepositoryProtocol {
-    func fetchPrimaryBusiness() async throws -> BusinessDTO?
+protocol BusinessRepositoryProtocol: Sendable {
+    func fetchActiveBusiness() async throws -> BusinessDTO?
 
     func fetchAllBusinesses() async throws -> [BusinessDTO]
 
@@ -33,7 +33,9 @@ protocol BusinessRepositoryProtocol {
         defaultTaxRate: Double?,
         defaultCurrency: String?
     )
-        async throws
+        async throws -> BusinessDTO
 
     func deleteBusiness(_ businessID: UUID) async throws
+
+    func makeBusinessActive(_ businessID: UUID) async throws -> BusinessDTO?
 }

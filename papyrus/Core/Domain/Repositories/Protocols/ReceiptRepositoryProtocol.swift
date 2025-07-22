@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol ReceiptRepositoryProtocol {
+protocol ReceiptRepositoryProtocol: Sendable {
     func fetchAllReceipts() async throws -> [ReceiptDTO]
     func fetchReceipts(from startDate: Date, to endDate: Date) async throws -> [ReceiptDTO]
     func fetchTodaysReceipts() async throws -> [ReceiptDTO]
@@ -25,10 +25,10 @@ protocol ReceiptRepositoryProtocol {
         legalPerformanceDate: Date
     )
         async throws -> ReceiptDTO
-    func updateReceipt(_ receiptId: UUID, footerText: String?, paymentMethod: String?) async throws
+    func updateReceipt(_ receiptId: UUID, footerText: String?, paymentMethod: String?) async throws -> ReceiptDTO
     func deleteReceipt(_ receiptId: UUID) async throws
     func getTotalSales(from startDate: Date, to endDate: Date) async throws -> Decimal
     func generateNextReceiptNumber() async throws -> String
     func receiptNumberExists(_ receiptNumber: String) async throws -> Bool
-    func addReceiptItems(_ receiptId: UUID, items: [CartItem]) async throws
+    func addReceiptItems(_ receiptId: UUID, items: [ReceiptItemDTO]) async throws -> ReceiptDTO
 }

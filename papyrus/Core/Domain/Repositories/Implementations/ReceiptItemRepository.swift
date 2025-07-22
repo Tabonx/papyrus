@@ -99,10 +99,10 @@ actor ReceiptItemRepository: ReceiptItemRepositoryProtocol {
         order: Int?,
         linkedItemId: UUID?
     )
-        async throws {
+        async throws -> ReceiptItemDTO {
         let context = persistenceController.backgroundContext
 
-        try await context.perform {
+        return try await context.perform {
             let request = ReceiptItem.fetchReceiptItem(withId: receiptItemId)
             guard let receiptItem = try context.fetch(request).first else {
                 throw RepositoryError.itemNotFound
@@ -131,6 +131,8 @@ actor ReceiptItemRepository: ReceiptItemRepositoryProtocol {
             }
 
             try context.save()
+
+            return receiptItem.toDTO()
         }
     }
 

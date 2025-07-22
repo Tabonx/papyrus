@@ -52,12 +52,14 @@ extension Business {
 }
 
 extension Business {
-    static func fetchPrimaryBusiness() -> NSFetchRequest<Business> {
+    static func fetchActiveBusiness() -> NSFetchRequest<Business> {
         let request = Business.fetchRequest()
+
         request.fetchLimit = 1
         request.sortDescriptors = [
             NSSortDescriptor(keyPath: \Business.createdAt_, ascending: true),
         ]
+        request.predicate = NSPredicate(format: "isActive == true")
         return request
     }
 

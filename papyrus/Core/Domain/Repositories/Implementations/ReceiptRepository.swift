@@ -9,7 +9,6 @@ import CoreData
 import Dependencies
 
 actor ReceiptRepository: ReceiptRepositoryProtocol {
-    @Dependency(\.date) var date
     @Dependency(\.persistenceController) var persistenceController
 
     func fetchAllReceipts() async throws -> [ReceiptDTO] {
@@ -95,12 +94,14 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
         async throws -> ReceiptDTO {
         let context = persistenceController.backgroundContext
 
+        @Dependency(\.date) var date
+
         return try await context.perform {
             let receipt = Receipt(context: context)
             receipt.id = UUID()
             receipt.receiptNumber = receiptNumber
-            receipt.createdAt = self.date.now
-            receipt.issuedDate = self.date.now
+            receipt.createdAt = date.now
+            receipt.issuedDate = date.now
             receipt.paymentMethod = paymentMethod
             receipt.footerText = footerText
             receipt.legalPerformanceDate = legalPerformanceDate
@@ -128,10 +129,10 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
         }
     }
 
-    func updateReceipt(_ receiptId: UUID, footerText: String?, paymentMethod: String?) async throws {
+    func updateReceipt(_ receiptId: UUID, footerText: String?, paymentMethod: String?) async throws -> ReceiptDTO {
         let context = persistenceController.backgroundContext
 
-        try await context.perform {
+        return try await context.perform {
             let request = Receipt.fetchReceipt(withID: receiptId)
 
             guard let contextReceipt = try context.fetch(request).first else {
@@ -147,6 +148,8 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
             }
 
             try context.save()
+
+            return contextReceipt.toDTO()
         }
     }
 
@@ -182,11 +185,12 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
 
     func generateNextReceiptNumber() async throws -> String {
         let context = persistenceController.backgroundContext
+        @Dependency(\.date) var date
 
         return try await context.perform {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy"
-            let year = formatter.string(from: self.date.now)
+            let year = formatter.string(from: date.now)
 
             // Find the highest receipt number for this year
             let request = Receipt.fetchRequest()
@@ -221,10 +225,10 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
         }
     }
 
-    func addReceiptItems(_ receiptId: UUID, items: [CartItem]) async throws {
+    func addReceiptItems(_ receiptId: UUID, items: [ReceiptItemDTO]) async throws -> ReceiptDTO {
         let context = persistenceController.backgroundContext
 
-        try await context.perform {
+        return try await context.perform {
 
             let receiptRequest = Receipt.fetchReceipt(withID: receiptId)
 
@@ -236,7 +240,7 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
             for (index, cartItem) in items.enumerated() {
                 let receiptItem = ReceiptItem(context: context)
                 receiptItem.id = UUID()
-                receiptItem.itemName = cartItem.name
+                receiptItem.itemName = cartItem.itemName
                 receiptItem.unitPrice = cartItem.unitPrice
                 receiptItem.quantity = cartItem.quantity
                 receiptItem.taxRate = cartItem.taxRate
@@ -245,14 +249,17 @@ actor ReceiptRepository: ReceiptRepositoryProtocol {
 
                 // Link to original item if it exists
 
-                let itemRequest = Item.fetchItem(withId: cartItem.itemId)
-
-                if let originalItem = try context.fetch(itemRequest).first {
-                    receiptItem.item = originalItem
+                if let itemId = cartItem.itemId {
+                    let itemRequest = Item.fetchItem(withId: itemId)
+                    if let originalItem = try context.fetch(itemRequest).first {
+                        receiptItem.item = originalItem
+                    }
                 }
             }
 
             try context.save()
+
+            return receipt.toDTO()
         }
     }
 }

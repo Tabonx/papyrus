@@ -4,7 +4,6 @@
 //
 //  Created by Pavel Kroupa on 19.06.2025.
 //
-
 @preconcurrency import CoreBluetooth
 import SwiftUI
 
@@ -37,13 +36,13 @@ enum ESCPOSCommands {
 }
 
 // MARK: - Receipt Model
-enum ReceiptElementType {
+enum ReceiptElementType: Codable {
     case text
     case separator
     case spacer
 }
 
-enum ReceiptTextAlignment {
+enum ReceiptTextAlignment: Codable {
     case left
     case center
     case right
@@ -58,19 +57,14 @@ enum ReceiptTextAlignment {
 
     var ui: TextAlignment {
         switch self {
-        case .left:
-            return TextAlignment.leading
-
-        case .center:
-            return TextAlignment.center
-
-        case .right:
-            return TextAlignment.trailing
+        case .left: return TextAlignment.leading
+        case .center: return TextAlignment.center
+        case .right: return TextAlignment.trailing
         }
     }
 }
 
-enum TextSize {
+enum TextSize: Codable {
     case normal
     case doubleWidth
     case doubleHeight
@@ -113,11 +107,6 @@ struct ReceiptElement: Identifiable, Codable {
         self.lineCount = lineCount
     }
 }
-
-// Make enums Codable
-extension ReceiptElementType: Codable {}
-extension ReceiptTextAlignment: Codable {}
-extension TextSize: Codable {}
 
 @MainActor
 @Observable
@@ -234,6 +223,11 @@ class PrinterState {
     func setPrinting(_ printing: Bool) {
         isPrinting = printing
     }
+
+    // Safe getter for discovered printers to avoid data races
+    func getDiscoveredPrinters() -> [CBPeripheral] {
+        return discoveredPrinters
+    }
 }
 
 // MARK: - Error Types
@@ -276,8 +270,7 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
 
     let state = PrinterState()
 
-    // Connection and scan continuations for async operations
-    private var scanContinuation: CheckedContinuation<[CBPeripheral], Never>?
+    // Connection and print continuations for async operations
     private var connectionContinuation: CheckedContinuation<Void, Error>?
     private var printContinuation: CheckedContinuation<Void, Error>?
 
@@ -303,25 +296,22 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
             return []
         }
 
-        return await withCheckedContinuation { continuation in
-            scanContinuation = continuation
+        state.clearDiscoveredPrinters()
+        state.updateStatus("Scanning for Rongta printers...")
+        state.setScanning(true)
 
-            state.clearDiscoveredPrinters()
-            state.updateStatus("Scanning for Rongta printers...")
-            state.setScanning(true)
-
-            bluetoothQueue.async {
-                centralManager.scanForPeripherals(withServices: nil, options: [
-                    CBCentralManagerScanOptionAllowDuplicatesKey: false,
-                ])
-            }
-
-            // Stop scanning after timeout
-            Task {
-                try? await Task.sleep(for: .seconds(timeout))
-                await self.stopScanInternal()
-            }
+        bluetoothQueue.async {
+            centralManager.scanForPeripherals(withServices: nil, options: [
+                CBCentralManagerScanOptionAllowDuplicatesKey: false,
+            ])
         }
+
+        // Stop scanning after timeout
+        try? await Task.sleep(for: .seconds(timeout))
+        await stopScanInternal()
+
+        // Return the discovered printers directly from state
+        return state.getDiscoveredPrinters()
     }
 
     private func stopScanInternal() async {
@@ -333,14 +323,12 @@ class AsyncPrinterManager: NSObject, ObservableObject, CBCentralManagerDelegate,
 
         state.setScanning(false)
         let count = state.discoveredPrinters.count
+
         if count == 0 {
             state.updateStatus("No Rongta printers found")
         } else {
             state.updateStatus("Found \(count) printer(s)")
         }
-
-        scanContinuation?.resume(returning: state.discoveredPrinters)
-        scanContinuation = nil
     }
 
     func connectToPrinter(_ peripheral: CBPeripheral) async throws {

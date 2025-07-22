@@ -11,7 +11,7 @@ import SwiftUI
 @MainActor
 @Observable
 class ShoppingCart {
-    var items: [CartItem] = []
+    var items: [ReceiptItemDTO] = []
 
     var isEmpty: Bool {
         items.isEmpty
@@ -52,18 +52,20 @@ class ShoppingCart {
             items[existingIndex].quantity += quantity
         } else {
             // Add new item to cart
-            let cartItem = CartItem(
-                itemId: itemId,
-                name: name,
+            let cartItem = ReceiptItemDTO(
+                id: itemId,
+                itemName: name,
                 unitPrice: unitPrice,
+                quantity: quantity,
                 taxRate: taxRate,
-                quantity: quantity
+                order: items.count,
+                itemId: nil
             )
             items.append(cartItem)
         }
     }
 
-    func addItem(from item: Item, quantity: Int = 1) {
+    func addItem(from item: ItemDTO, quantity: Int = 1) {
         addItem(
             itemId: item.id,
             name: item.name,

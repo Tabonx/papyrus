@@ -9,14 +9,13 @@ import CoreData
 import Dependencies
 
 actor BusinessRepository: BusinessRepositoryProtocol {
-    @Dependency(\.date) var date
     @Dependency(\.persistenceController) var persistenceController
 
-    func fetchPrimaryBusiness() async throws -> BusinessDTO? {
+    func fetchActiveBusiness() async throws -> BusinessDTO? {
         let context = persistenceController.backgroundContext
 
         return try await context.perform {
-            let request = Business.fetchPrimaryBusiness()
+            let request = Business.fetchActiveBusiness()
             return try context.fetch(request).first?.toDTO()
         }
     }
@@ -50,6 +49,8 @@ actor BusinessRepository: BusinessRepositoryProtocol {
         async throws -> BusinessDTO {
         let context = persistenceController.backgroundContext
 
+        @Dependency(\.date) var date
+
         return try await context.perform {
             let business = Business(context: context)
             business.id = UUID()
@@ -59,8 +60,8 @@ actor BusinessRepository: BusinessRepositoryProtocol {
             business.website = website
             business.defaultTaxRate = defaultTaxRate
             business.defaultCurrency = defaultCurrency
-            business.createdAt = self.date.now
-            business.updatedAt = self.date.now
+            business.createdAt = date.now
+            business.updatedAt = date.now
 
             try context.save()
             return business.toDTO()
@@ -76,10 +77,12 @@ actor BusinessRepository: BusinessRepositoryProtocol {
         defaultTaxRate: Double?,
         defaultCurrency: String?
     )
-        async throws {
+        async throws -> BusinessDTO {
         let context = persistenceController.backgroundContext
 
-        try await context.perform {
+        @Dependency(\.date) var date
+
+        return try await context.perform {
             let request = Business.fetchBusiness(withId: businessID)
 
             guard let contextBusiness = try context.fetch(request).first else {
@@ -106,9 +109,10 @@ actor BusinessRepository: BusinessRepositoryProtocol {
                 contextBusiness.defaultCurrency = defaultCurrency
             }
 
-            contextBusiness.updatedAt = self.date.now
+            contextBusiness.updatedAt = date.now
 
             try context.save()
+            return contextBusiness.toDTO()
         }
     }
 
@@ -124,6 +128,30 @@ actor BusinessRepository: BusinessRepositoryProtocol {
 
             context.delete(contextBusiness)
             try context.save()
+        }
+    }
+
+    func makeBusinessActive(_ businessID: UUID) async throws -> BusinessDTO? {
+        let context = persistenceController.backgroundContext
+
+        return try await context.perform {
+            let request = Business.fetchActiveBusiness()
+            let businesses = try context.fetch(request)
+
+            var activeBusiness: Business?
+
+            for business in businesses {
+                if business.id == businessID {
+                    business.isActive = true
+                    activeBusiness = business
+                } else {
+                    business.isActive = false
+                }
+            }
+
+            try context.save()
+
+            return activeBusiness?.toDTO()
         }
     }
 }

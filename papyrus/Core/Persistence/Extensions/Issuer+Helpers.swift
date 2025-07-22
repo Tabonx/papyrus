@@ -46,6 +46,13 @@ extension Issuer {
         return request
     }
 
+    static func fetchActiveIssuer() -> NSFetchRequest<Issuer> {
+        let request = Issuer.fetchRequest()
+        request.predicate = NSPredicate(format: "isActive == true")
+        request.fetchLimit = 1
+        return request
+    }
+
     static func fetchIssuer(withId issuerId: UUID) -> NSFetchRequest<Issuer> {
         let request = Issuer.fetchRequest()
         request.predicate = NSPredicate(format: "id_ == %@", issuerId as CVarArg)
