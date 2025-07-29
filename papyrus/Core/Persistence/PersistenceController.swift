@@ -7,20 +7,31 @@
 
 import CoreData
 import Dependencies
+import os.log
 
-class PersistenceController: ObservableObject, @unchecked Sendable{
+class PersistenceController: ObservableObject, @unchecked Sendable {
     static let shared = PersistenceController()
 
     private init() {}
 
     lazy var persistentContainer: NSPersistentContainer = {
+        Logger.persistence.info("Initializing Core Data stack")
         let container = NSPersistentContainer(name: "Model")
 
-        container.loadPersistentStores { _, error in
-            if let error {
+        container.loadPersistentStores { storeDescription, error in
+            if let error = error {
+                Logger.persistence.error("Failed to load persistent stores: \(error.localizedDescription)")
                 fatalError("Failed to load persistent stores: \(error.localizedDescription)")
+            } else {
+                Logger.persistence.info("Persistent store loaded successfully")
+                if let storeURL = storeDescription.url {
+                    Logger.persistence.info("Store URL: \(storeURL.absoluteString)")
+                }
             }
         }
+
+        Logger.persistence.info("Core Data stack initialized")
+
         return container
     }()
 

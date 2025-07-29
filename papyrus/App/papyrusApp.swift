@@ -12,12 +12,19 @@ import SwiftUI
 @main
 struct papyrusApp: App {
     @Dependency(\.persistenceController) private var persistenceController
+    @Dependency(\.printerManager) private var printerManagerWrapper
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext,
-                             persistenceController.persistentContainer.viewContext)
+            TabView {
+                Text("To Be Implemented")
+                    .tabItem { Label("POS", systemImage: "creditcard") }
+
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "gear") }
+            }
+            .environment(\.managedObjectContext, persistenceController.persistentContainer.viewContext)
+            .environmentObject(printerManagerWrapper.value)
         }
     }
 }

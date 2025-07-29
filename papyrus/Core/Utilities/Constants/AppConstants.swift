@@ -8,11 +8,10 @@
 import UIKit
 
 enum AppConstants {
-    enum App {
-        static let name = "Papyrus"
-        static let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        static let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-    }
+    static let name = "Papyrus"
+    static let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    static let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    static let bundleID = Bundle.main.bundleIdentifier ?? "com.tabonx.papyrus"
 
     // MARK: - Business Rules
     enum Business {
